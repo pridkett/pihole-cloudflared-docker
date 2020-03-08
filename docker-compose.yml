@@ -1,0 +1,59 @@
+version: "3"
+
+# Manually create a network so we can use static IPs on the backend
+networks:
+  pihole_net:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+# More info at https://github.com/pi-hole/docker-pi-hole/ and https://docs.pi-hole.net/
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:v4.4
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "80:80/tcp"
+      - "443:443/tcp"
+    env_file:
+      - .env
+    environment:
+      TZ: 'America/New_York'
+      # WEBPASSWORD: 'set a secure password here or it will be random'
+    # Volumes store your data between container upgrades
+    volumes:
+      - './etc-pihole/:/etc/pihole/'
+      - './etc-dnsmasq.d/:/etc/dnsmasq.d/'
+        # - '/etc/hosts:/etc/hosts:ro'
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1
+    # Recommended but not required (DHCP needs NET_ADMIN)
+    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    networks:
+      pihole_net:
+        ipv4_address: 172.20.0.10
+    depends_on:
+      - cloudflared
+
+  cloudflared:
+    container_name: cloudflared
+    image: visibilityspots/cloudflared:latest
+    env_file:
+      - .env
+    ports:
+      - "5054:5054/tcp"
+      - "5054:5054/udp"
+    environment:
+      TZ: 'America/New_York'
+    restart: unless-stopped
+    networks:
+      pihole_net:
+        ipv4_address: 172.20.0.2
+ 
