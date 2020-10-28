@@ -11,6 +11,7 @@ networks:
 services:
   pihole:
     container_name: pihole
+    hostname: pihole
     image: pihole/pihole:v4.4
     ports:
       - "53:53/tcp"
@@ -22,6 +23,8 @@ services:
       - .env
     environment:
       TZ: 'America/New_York'
+      DNS1: "172.20.0.3#8053"
+      DNS2: "172.20.0.2#5054"
       # WEBPASSWORD: 'set a secure password here or it will be random'
     # Volumes store your data between container upgrades
     volumes:
@@ -40,20 +43,38 @@ services:
       pihole_net:
         ipv4_address: 172.20.0.10
     depends_on:
+      - nextdns-proxy
       - cloudflared
 
   cloudflared:
     container_name: cloudflared
+    hostname: cloudflared
     image: visibilityspots/cloudflared:latest
     env_file:
       - .env
-    ports:
-      - "5054:5054/tcp"
-      - "5054:5054/udp"
     environment:
       TZ: 'America/New_York'
+      # DNS1: 1.1.1.3
+      # DNS2: 1.0.0.3
     restart: unless-stopped
     networks:
       pihole_net:
         ipv4_address: 172.20.0.2
- 
+
+  nextdns-proxy:
+    image: "terafin/nextdns-proxy:latest"
+    container_name: nextdns-proxy
+    hostname: nextdns-proxy
+    # grab the environment data from .env 
+    env_file:
+      - .env
+    # environment: # Note, these are ALL optional
+      # NEXTDNS_CONFIG: <Your NextDNS Config ID>
+      # NEXTDNS_FORWARDING_DOMAIN: <Your Local Domain Name>
+      # NEXTDNS_FORWARDING_DNSIP: <Your Local Router Address>
+    restart: unless-stopped
+    networks:
+      pihole_net:
+        ipv4_address: 172.20.0.3
+    volumes:
+      - './nextdns/run.sh:/var/nextdns/run.sh:ro'
