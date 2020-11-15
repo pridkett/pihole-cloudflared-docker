@@ -78,3 +78,18 @@ services:
         ipv4_address: 172.20.0.3
     volumes:
       - './nextdns/run.sh:/var/nextdns/run.sh:ro'
+
+  unifi-dns:
+    image: unifi-dns
+    build: unifi-dns
+    container_name: unifi-dns
+    hostname: unifi-dns
+    env_file:
+      - .env.unifi-dns
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    networks:
+      pihole_net:
+        ipv4_address: 172.20.0.4
+
