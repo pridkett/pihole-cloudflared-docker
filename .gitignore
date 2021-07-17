@@ -1,3 +1,4 @@
 .env
+.env.unifi-dns
 etc-pihole/
 etc-dnsmasq.d/
